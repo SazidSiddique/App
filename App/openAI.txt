@@ -1,0 +1,118 @@
+import OpenAI from "openai";
+
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "" 
+});
+
+export interface ScriptSection {
+  title: string;
+  content: string;
+  timing: string;
+  color: string;
+}
+
+export interface GeneratedContent {
+  script: ScriptSection[];
+  hashtags: string[];
+}
+
+export async function generateViralScript(topic: string): Promise<ScriptSection[]> {
+  try {
+    const prompt = `Create a viral TikTok script for the topic: "${topic}". 
+
+Structure the response as JSON with the following format:
+{
+  "sections": [
+    {
+      "title": "🪝 HOOK (0-3 seconds)",
+      "content": "Script content for hook",
+      "timing": "0-3 seconds",
+      "color": "emerald"
+    },
+    {
+      "title": "📝 MAIN CONTENT (3-25 seconds)", 
+      "content": "Script content for main section",
+      "timing": "3-25 seconds",
+      "color": "blue"
+    },
+    {
+      "title": "🎯 CALL TO ACTION (25-30 seconds)",
+      "content": "Script content for CTA",
+      "timing": "25-30 seconds", 
+      "color": "yellow"
+    }
+  ]
+}
+
+Guidelines:
+- Hook: Start with an attention-grabbing statement that makes viewers stop scrolling
+- Main Content: Provide valuable, engaging content related to the topic
+- CTA: Include a clear call-to-action encouraging engagement
+- Keep it conversational and authentic
+- Use emotion and relatability
+- Make it suitable for 30-second TikTok format`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a viral TikTok content expert. Create engaging, authentic scripts that capture attention and drive engagement."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 1000,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.sections || [];
+  } catch (error) {
+    console.error("Error generating script:", error);
+    throw new Error("Failed to generate viral script");
+  }
+}
+
+export async function generateHashtags(topic: string): Promise<string[]> {
+  try {
+    const prompt = `Generate 5 optimized hashtags for TikTok content about: "${topic}".
+
+Return the response as JSON in this format:
+{
+  "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"]
+}
+
+Guidelines:
+- Include trending and evergreen hashtags
+- Mix broad appeal with niche-specific tags
+- Optimize for discoverability and engagement
+- Keep hashtags relevant to the topic
+- Use lowercase without # symbol (will be added in frontend)`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a social media hashtag expert specializing in TikTok optimization and viral content discovery."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 300,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.hashtags || [];
+  } catch (error) {
+    console.error("Error generating hashtags:", error);
+    throw new Error("Failed to generate hashtags");
+  }
+}

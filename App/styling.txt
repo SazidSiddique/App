@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(146, 64%, 26%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* GitHub Dark Theme Colors */
+  --github-bg: hsl(220, 13%, 7%);
+  --github-card: hsl(220, 13%, 13%);
+  --github-border: hsl(220, 13%, 19%);
+  --github-text: hsl(210, 30%, 96%);
+  --github-text-secondary: hsl(213, 12%, 58%);
+  --emerald-accent: hsl(146, 64%, 26%);
+  --emerald-hover: hsl(146, 64%, 33%);
+}
+
+.dark {
+  --background: hsl(220, 13%, 7%);
+  --foreground: hsl(210, 30%, 96%);
+  --muted: hsl(220, 13%, 16%);
+  --muted-foreground: hsl(213, 12%, 58%);
+  --popover: hsl(220, 13%, 7%);
+  --popover-foreground: hsl(210, 30%, 96%);
+  --card: hsl(220, 13%, 13%);
+  --card-foreground: hsl(210, 30%, 96%);
+  --border: hsl(220, 13%, 19%);
+  --input: hsl(220, 13%, 19%);
+  --primary: hsl(146, 64%, 26%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(220, 13%, 16%);
+  --secondary-foreground: hsl(210, 30%, 96%);
+  --accent: hsl(220, 13%, 16%);
+  --accent-foreground: hsl(210, 30%, 96%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  html {
+    @apply dark;
+  }
+  
+  /* Animated background gradient */
+  .animated-bg {
+    background: linear-gradient(-45deg, 
+      hsl(220, 13%, 7%), 
+      hsl(220, 13%, 9%), 
+      hsl(146, 64%, 8%), 
+      hsl(220, 13%, 7%),
+      hsl(146, 64%, 6%)
+    );
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+  
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  /* Floating particles effect */
+  .particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(34, 197, 94, 0.3);
+    border-radius: 50%;
+    animation: float 20s infinite linear;
+  }
+  
+  .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+  .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+  .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+  .particle:nth-child(4) { left: 40%; animation-delay: 6s; }
+  .particle:nth-child(5) { left: 50%; animation-delay: 8s; }
+  .particle:nth-child(6) { left: 60%; animation-delay: 10s; }
+  .particle:nth-child(7) { left: 70%; animation-delay: 12s; }
+  .particle:nth-child(8) { left: 80%; animation-delay: 14s; }
+  .particle:nth-child(9) { left: 90%; animation-delay: 16s; }
+  
+  @keyframes float {
+    0% { 
+      transform: translateY(100vh) rotate(0deg);
+      opacity: 0;
+    }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { 
+      transform: translateY(-100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+  
+  /* Glowing border effect */
+  .glow-border {
+    position: relative;
+    border: 1px solid transparent;
+    background: linear-gradient(hsl(220, 13%, 13%), hsl(220, 13%, 13%)) padding-box,
+                linear-gradient(45deg, rgba(34, 197, 94, 0.5), rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.5)) border-box;
+    border-radius: 12px;
+  }
+  
+  /* Content should be above particles */
+  .content-layer {
+    position: relative;
+    z-index: 10;
+  }
+}
+
+/* GitHub Dark Theme Utilities */
+.bg-github-bg {
+  background-color: var(--github-bg);
+}
+
+.bg-github-card {
+  background-color: var(--github-card);
+}
+
+.border-github-border {
+  border-color: var(--github-border);
+}
+
+.text-github-text {
+  color: var(--github-text);
+}
+
+.text-github-text-secondary {
+  color: var(--github-text-secondary);
+}
+
+.bg-emerald-accent {
+  background-color: var(--emerald-accent);
+}
+
+.hover\:bg-emerald-hover:hover {
+  background-color: var(--emerald-hover);
+}
+
+.text-emerald-accent {
+  color: var(--emerald-accent);
+}
+
+.border-emerald-accent {
+  border-color: var(--emerald-accent);
+}
+
+.focus\:ring-emerald-accent:focus {
+  --tw-ring-color: var(--emerald-accent);
+}

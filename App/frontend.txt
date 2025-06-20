@@ -1,0 +1,302 @@
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Video, Hash, Copy, Wand2, AlertTriangle, Lightbulb, Check, Brain, Zap } from "lucide-react";
+import type { GeneratedContent } from "@shared/schema";
+
+interface ApiResponse {
+  success: boolean;
+  data?: GeneratedContent;
+  error?: string;
+  demo?: boolean;
+}
+
+export default function ViralGenerator() {
+  const [topic, setTopic] = useState("");
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [isDemoContent, setIsDemoContent] = useState(false);
+  const { toast } = useToast();
+
+  const generateContentMutation = useMutation({
+    mutationFn: async (topic: string): Promise<ApiResponse> => {
+      const response = await apiRequest("POST", "/api/generate-content", { topic });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        setGeneratedContent(data.data);
+        setIsDemoContent(data.demo || false);
+        toast({
+          title: data.demo ? "Demo Content Generated!" : "Content Generated!",
+          description: data.demo 
+            ? "Showing demo content. Add OpenAI billing to get real AI-generated scripts." 
+            : "Your viral content is ready to use.",
+        });
+      } else {
+        toast({
+          title: "Generation Failed",
+          description: data.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!topic.trim()) {
+      toast({
+        title: "Topic Required",
+        description: "Please enter a topic to generate content.",
+        variant: "destructive",
+      });
+      return;
+    }
+    generateContentMutation.mutate(topic.trim());
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: `${label} copied to clipboard.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyScript = () => {
+    if (!generatedContent?.script) return;
+    
+    const scriptText = generatedContent.script
+      .map(section => `${section.title}\n${section.content}`)
+      .join('\n\n');
+    
+    copyToClipboard(scriptText, "Script");
+  };
+
+  const copyHashtags = () => {
+    if (!generatedContent?.hashtags) return;
+    
+    const hashtagText = generatedContent.hashtags
+      .map(tag => `#${tag}`)
+      .join(' ');
+    
+    copyToClipboard(hashtagText, "Hashtags");
+  };
+
+  const getSectionBorderColor = (color: string) => {
+    switch (color) {
+      case 'emerald': return 'border-emerald-accent';
+      case 'blue': return 'border-blue-500';
+      case 'yellow': return 'border-yellow-500';
+      default: return 'border-emerald-accent';
+    }
+  };
+
+  const getSectionTextColor = (color: string) => {
+    switch (color) {
+      case 'emerald': return 'text-emerald-accent';
+      case 'blue': return 'text-blue-400';
+      case 'yellow': return 'text-yellow-400';
+      default: return 'text-emerald-accent';
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      {/* Header Section */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center mr-4 shadow-xl ring-2 ring-emerald-400/20">
+            <Brain className="text-white text-xl" size={26} />
+          </div>
+          <h1 className="text-4xl font-black text-white drop-shadow-lg">
+            TrendGenius AI
+          </h1>
+          <Zap className="text-emerald-400 ml-2 animate-pulse" size={24} />
+        </div>
+        <p className="text-github-text-secondary text-lg">AI-powered viral content generator</p>
+        <p className="text-github-text-secondary text-sm mt-2">Transform trending topics into viral TikTok & YouTube content</p>
+      </div>
+
+      {/* Main Content Card */}
+      <Card className="glow-border bg-github-card shadow-2xl mb-6">
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="mb-6">
+            <div className="mb-4">
+              <Label htmlFor="topicInput" className="block text-sm font-medium text-github-text mb-2 flex items-center">
+                <Hash className="text-emerald-accent mr-2" size={16} />
+                What's trending? Enter your topic:
+              </Label>
+              <Input
+                id="topicInput"
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g., morning routines, productivity hacks, cooking tips..."
+                className="w-full px-4 py-3 bg-github-bg border-github-border text-github-text placeholder:text-github-text-secondary focus:ring-2 focus:ring-emerald-accent focus:border-transparent"
+                required
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              disabled={generateContentMutation.isPending}
+              className="w-full bg-emerald-accent hover:bg-emerald-hover text-white font-semibold py-3 px-6 flex items-center justify-center"
+            >
+              <Wand2 className="mr-2" size={20} />
+              <span>
+                {generateContentMutation.isPending ? "Generating..." : "Generate Viral Content"}
+              </span>
+            </Button>
+          </form>
+
+          {/* Loading State */}
+          {generateContentMutation.isPending && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-accent mr-3"></div>
+                <span className="text-github-text-secondary">Generating viral content...</span>
+              </div>
+              <p className="text-sm text-github-text-secondary mt-2">This usually takes 5-10 seconds</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {generateContentMutation.isError && (
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <AlertTriangle className="text-red-400 mr-2" size={20} />
+                <span className="text-red-400 font-medium">Generation Failed</span>
+              </div>
+              <p className="text-red-300 text-sm mt-1">
+                {generateContentMutation.error?.message || "Something went wrong. Please try again."}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Results Section */}
+      {generatedContent && (
+        <div className="space-y-6">
+          {/* Demo Content Warning */}
+          {isDemoContent && (
+            <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <AlertTriangle className="text-yellow-400 mr-2" size={20} />
+                <span className="text-yellow-400 font-medium">Demo Content</span>
+              </div>
+              <p className="text-yellow-300 text-sm mt-1">
+                This is sample content. To get real AI-generated scripts, add billing to your OpenAI account at platform.openai.com/account/billing
+              </p>
+            </div>
+          )}
+
+          {/* Script Section */}
+          <Card className="glow-border bg-github-card shadow-2xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-github-text flex items-center">
+                  <Video className="text-emerald-accent mr-2" size={20} />
+                  Viral Script {isDemoContent && <span className="text-yellow-400 text-sm ml-2">(Demo)</span>}
+                </h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyScript}
+                  className="bg-github-bg hover:bg-github-border text-github-text-secondary hover:text-github-text border-github-border"
+                >
+                  <Copy className="mr-1" size={14} />
+                  Copy
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {generatedContent.script.map((section, index) => (
+                  <div 
+                    key={index}
+                    className={`bg-github-bg border-l-4 ${getSectionBorderColor(section.color)} p-4 rounded-r-lg`}
+                  >
+                    <h3 className={`${getSectionTextColor(section.color)} font-semibold mb-2`}>
+                      {section.title}
+                    </h3>
+                    <p className="text-github-text">{section.content}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Hashtags Section */}
+          <Card className="glow-border bg-github-card shadow-2xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-github-text flex items-center">
+                  <Hash className="text-emerald-accent mr-2" size={20} />
+                  Optimized Hashtags {isDemoContent && <span className="text-yellow-400 text-sm ml-2">(Demo)</span>}
+                </h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyHashtags}
+                  className="bg-github-bg hover:bg-github-border text-github-text-secondary hover:text-github-text border-github-border"
+                >
+                  <Copy className="mr-1" size={14} />
+                  Copy All
+                </Button>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {generatedContent.hashtags.map((hashtag, index) => (
+                  <span 
+                    key={index}
+                    className="bg-emerald-accent/10 text-emerald-accent px-3 py-1.5 rounded-full text-sm font-medium"
+                  >
+                    #{hashtag}
+                  </span>
+                ))}
+              </div>
+              
+              <div className="p-3 bg-github-bg rounded-lg">
+                <p className="text-github-text-secondary text-sm flex items-start">
+                  <Lightbulb className="text-yellow-400 mr-2 mt-0.5 flex-shrink-0" size={14} />
+                  <span>
+                    <strong>Pro Tip:</strong> Use 3-5 hashtags for optimal reach. Mix trending and niche tags for best results.
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="text-center mt-12 pt-8 border-t border-github-border">
+        <p className="text-github-text-secondary text-sm flex items-center justify-center">
+          <Wand2 className="text-emerald-accent mr-1" size={14} />
+          TrendGenius AI • Powered by Advanced AI • Built for Content Creators
+        </p>
+      </div>
+    </div>
+  );
+}

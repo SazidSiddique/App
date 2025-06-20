@@ -1,0 +1,92 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { contentGenerationSchema } from "@shared/schema";
+import { generateViralScript, generateHashtags } from "./services/openai";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Generate viral content endpoint
+  app.post("/api/generate-content", async (req, res) => {
+    try {
+      const { topic } = contentGenerationSchema.parse(req.body);
+
+      // Try to generate real content first, fallback to demo if API quota exceeded
+      try {
+        const [script, hashtags] = await Promise.all([
+          generateViralScript(topic),
+          generateHashtags(topic)
+        ]);
+
+        res.json({
+          success: true,
+          data: {
+            script,
+            hashtags
+          }
+        });
+      } catch (apiError: any) {
+        // If OpenAI API fails due to quota/billing, return demo content
+        if ((apiError as any).code === 'insufficient_quota' || (apiError as any).status === 429) {
+          console.log("OpenAI quota exceeded, returning demo content for:", topic);
+          
+          const demoScript = [
+            {
+              title: "🪝 HOOK (0-3 seconds)",
+              content: `Did you know that ${topic} can completely transform your life? Here's what nobody tells you...`,
+              timing: "0-3 seconds",
+              color: "emerald"
+            },
+            {
+              title: "📝 MAIN CONTENT (3-25 seconds)",
+              content: `The secret to mastering ${topic} isn't what you think. Most people get it wrong because they focus on the wrong things. Here's the real strategy that actually works: Start small, be consistent, and track your progress. I've been doing this for months and the results speak for themselves.`,
+              timing: "3-25 seconds",
+              color: "blue"
+            },
+            {
+              title: "🎯 CALL TO ACTION (25-30 seconds)",
+              content: `If you found this helpful, save this video and follow for more tips about ${topic}. Comment below with your biggest challenge and I'll help you out!`,
+              timing: "25-30 seconds",
+              color: "yellow"
+            }
+          ];
+
+          const demoHashtags = [
+            topic.toLowerCase().replace(/\s+/g, ''),
+            "viral",
+            "fyp",
+            "tips",
+            "lifehack"
+          ];
+
+          res.json({
+            success: true,
+            data: {
+              script: demoScript,
+              hashtags: demoHashtags
+            },
+            demo: true
+          });
+        } else {
+          throw apiError;
+        }
+      }
+    } catch (error: any) {
+      console.error("Content generation error:", error);
+      
+      if ((error as any).name === "ZodError") {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid input. Please provide a valid topic."
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: (error as any).message || "Failed to generate content. Please try again."
+      });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
